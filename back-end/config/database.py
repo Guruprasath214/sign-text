@@ -15,7 +15,11 @@ class Database:
     
     def _initialize(self):
         try:
-            self.client = MongoClient(os.getenv('MONGODB_URI'))
+            # Add SSL parameters for Python 3.13 compatibility
+            self.client = MongoClient(
+                os.getenv('MONGODB_URI'),
+                tlsAllowInvalidCertificates=True
+            )
             self.db = self.client[os.getenv('DB_NAME', 'deaf_dump_db')]
             
             # Test connection
