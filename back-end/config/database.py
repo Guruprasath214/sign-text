@@ -1,4 +1,5 @@
 import os
+import certifi
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -15,10 +16,10 @@ class Database:
     
     def _initialize(self):
         try:
-            # Add SSL parameters for Python 3.13 compatibility
+            # Use certifi for SSL certificates to fix Python 3.13 compatibility
             self.client = MongoClient(
                 os.getenv('MONGODB_URI'),
-                tlsAllowInvalidCertificates=True
+                tlsCAFile=certifi.where()
             )
             self.db = self.client[os.getenv('DB_NAME', 'deaf_dump_db')]
             
