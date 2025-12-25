@@ -1,0 +1,234 @@
+import { useEffect, useRef, useState } from 'react'
+import Peer from 'simple-peer'
+import socketService from '../services/socket'
+import useAuthStore from '../store/authStore'
+
+export const useWebRTC = (roomId) => {
+  const [localStream, setLocalStream] = useState(null)
+  const [remoteStream, setRemoteStream] = useState(null)
+  const [isCallActive, setIsCallActive] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [isVideoOff, setIsVideoOff] = useState(false)
+  
+  const peerRef = useRef(null)
+  const localVideoRef = useRef(null)
+  const remoteVideoRef = useRef(null)
+  
+  const { user } = useAuthStore()
+
+  // Initialize media stream
+  const startLocalStream = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      })
+      
+      setLocalStream(stream)
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream
+      }
+      
+      return stream
+    } catch (error) {
+      console.error('Error accessing media devices:', error)
+      
+      // Import toast dynamically
+      const { toast } = await import('react-toastify')
+      
+      if (error.name === 'NotFoundError') {
+        toast.error('❌ Camera or microphone not found. Please connect a webcam and microphone.', {
+          position: "top-center",
+          autoClose: 5000,
+        })
+      } else if (error.name === 'NotAllowedError') {
+        toast.error('❌ Camera/microphone access denied. Please allow permissions in your browser.', {
+          position: "top-center",
+          autoClose: 5000,
+        })
+      } else {
+        toast.error('❌ Failed to access camera/microphone. Please check your devices.', {
+          position: "top-center",
+          autoClose: 5000,
+        })
+      }
+      
+      throw error
+    }
+  }
+
+  // Start a call (initiator)
+  const startCall = async () => {
+    try {
+      const stream = await startLocalStream()
+      
+      // Join room
+      socketService.joinRoom(roomId, user?.uid)
+      
+      // Listen for peer joining
+      socketService.onUserJoined((data) => {
+        console.log('User joined:', data)
+        createPeer(true, stream)
+      })
+      
+      setIsCallActive(true)
+    } catch (error) {
+      console.error('Error starting call:', error)
+    }
+  }
+
+  // Join a call (receiver)
+  const joinCall = async () => {
+    try {
+      const stream = await startLocalStream()
+      
+      // Join room
+      socketService.joinRoom(roomId, user?.uid)
+      
+      // Create peer as receiver
+      createPeer(false, stream)
+      
+      setIsCallActive(true)
+    } catch (error) {
+      console.error('Error joining call:', error)
+    }
+  }
+
+  // Create WebRTC peer connection
+  const createPeer = (isInitiator, stream) => {
+    const peer = new Peer({
+      initiator: isInitiator,
+      trickle: false,
+      stream: stream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+      },
+    })
+
+    peer.on('signal', (signal) => {
+      if (isInitiator) {
+        socketService.sendOffer(roomId, signal, user?.uid)
+      } else {
+        socketService.sendAnswer(roomId, signal, user?.uid)
+      }
+    })
+
+    peer.on('stream', (remoteStream) => {
+      console.log('Received remote stream')
+      setRemoteStream(remoteStream)
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream
+      }
+    })
+
+    peer.on('error', (error) => {
+      console.error('Peer error:', error)
+    })
+
+    peer.on('close', () => {
+      console.log('Peer connection closed')
+      endCall()
+    })
+
+    peerRef.current = peer
+    return peer
+  }
+
+  // Handle incoming signals
+  useEffect(() => {
+    if (!roomId) return
+
+    socketService.onOffer((data) => {
+      console.log('Received offer:', data)
+      if (peerRef.current && !peerRef.current.initiator) {
+        peerRef.current.signal(data.offer)
+      }
+    })
+
+    socketService.onAnswer((data) => {
+      console.log('Received answer:', data)
+      if (peerRef.current && peerRef.current.initiator) {
+        peerRef.current.signal(data.answer)
+      }
+    })
+
+    socketService.onIceCandidate((data) => {
+      console.log('Received ICE candidate:', data)
+      if (peerRef.current) {
+        peerRef.current.signal(data.candidate)
+      }
+    })
+
+    socketService.onUserLeft(() => {
+      console.log('User left the call')
+      endCall()
+    })
+
+    return () => {
+      socketService.removeAllListeners()
+    }
+  }, [roomId])
+
+  // Toggle mute
+  const toggleMute = () => {
+    if (localStream) {
+      localStream.getAudioTracks().forEach((track) => {
+        track.enabled = !track.enabled
+      })
+      setIsMuted(!isMuted)
+    }
+  }
+
+  // Toggle video
+  const toggleVideo = () => {
+    if (localStream) {
+      localStream.getVideoTracks().forEach((track) => {
+        track.enabled = !track.enabled
+      })
+      setIsVideoOff(!isVideoOff)
+    }
+  }
+
+  // End call
+  const endCall = () => {
+    // Stop local stream
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop())
+      setLocalStream(null)
+    }
+
+    // Close peer connection
+    if (peerRef.current) {
+      peerRef.current.destroy()
+      peerRef.current = null
+    }
+
+    // Leave room
+    if (roomId && user) {
+      socketService.leaveRoom(roomId, user.uid)
+    }
+
+    setRemoteStream(null)
+    setIsCallActive(false)
+    setIsMuted(false)
+    setIsVideoOff(false)
+  }
+
+  return {
+    localVideoRef,
+    remoteVideoRef,
+    localStream,
+    remoteStream,
+    isCallActive,
+    isMuted,
+    isVideoOff,
+    startCall,
+    joinCall,
+    endCall,
+    toggleMute,
+    toggleVideo,
+  }
+}

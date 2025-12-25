@@ -1,0 +1,39 @@
+services:
+  # Backend Service (Flask API)
+  - type: web
+    name: deaf-dump-backend
+    runtime: python
+    buildCommand: cd back-end && pip install -r requirements.txt
+    startCommand: cd back-end && python api_server.py
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb+srv://Def_and_dump:2CMpCrR408TJUpvv@cluster0.eiv0huw.mongodb.net/
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FORCE_HTTPS
+        value: True
+      - key: ALLOWED_ORIGINS
+        value: https://deaf-dump-frontend.onrender.com,https://deaf-dump-backend.onrender.com
+      - key: PORT
+        value: 5000
+      - key: PYTHON_VERSION
+        value: 3.10.0
+    healthCheckPath: /api/auth/csrf-token
+
+  # Frontend Service (React/Vite)
+  - type: web
+    name: deaf-dump-frontend
+    runtime: node
+    buildCommand: cd front-end && npm install && npm run build
+    staticPublishPath: ./front-end/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://deaf-dump-backend.onrender.com/api
+      - key: VITE_SOCKET_URL
+        value: https://deaf-dump-backend.onrender.com
+      - key: NODE_VERSION
+        value: 18.18.0
