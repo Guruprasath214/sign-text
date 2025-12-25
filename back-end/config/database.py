@@ -19,7 +19,8 @@ class Database:
             # Use certifi for SSL certificates to fix Python 3.13 compatibility
             self.client = MongoClient(
                 os.getenv('MONGODB_URI'),
-                tlsCAFile=certifi.where()
+                tlsCAFile=certifi.where(),
+                serverSelectionTimeoutMS=5000
             )
             self.db = self.client[os.getenv('DB_NAME', 'deaf_dump_db')]
             
@@ -39,7 +40,14 @@ class Database:
             
         except Exception as e:
             print(f"❌ MongoDB connection failed: {e}")
-            raise e
+            import traceback
+            traceback.print_exc()
+            # Don't raise - allow server to start even if DB fails
+            self.client = None
+            self.db = None
+            self.users = None
+            self.call_history = None
+            self.online_users = None
     
     def get_db(self):
         return self.db

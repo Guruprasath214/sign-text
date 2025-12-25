@@ -249,4 +249,4 @@ if __name__ == "__main__":
     print(f"🔒 Security: HTTPS={os.getenv('FORCE_HTTPS', 'False')}, Rate Limiting=Enabled, CSRF=Enabled")
     print(f"📡 Socket.IO enabled for real-time communication")
     print(f"🛡️  HTTPOnly Cookies, Security Headers, Input Validation enabled")
-    socketio.run(app, host="0.0.0.0", port=port, debug=True)
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)
