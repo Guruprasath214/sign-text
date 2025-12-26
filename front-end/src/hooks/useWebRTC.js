@@ -19,28 +19,44 @@ export const useWebRTC = (roomId) => {
   // Initialize media stream
   const startLocalStream = async () => {
     try {
+      // First, check if devices are available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Your browser does not support camera/microphone access. Please use Chrome, Firefox, or Edge.')
+      }
+
+      // Enumerate devices to check what's available
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const hasVideo = devices.some(device => device.kind === 'videoinput')
+      const hasAudio = devices.some(device => device.kind === 'audioinput')
+      
+      console.log('Available devices:', { hasVideo, hasAudio, devices })
+      
+      if (!hasVideo && !hasAudio) {
+        throw new Error('No camera or microphone found. Please connect a webcam and microphone.')
+      }
+      
       // Try to get both video and audio with flexible constraints
       let stream = null
       
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: {
+          video: hasVideo ? {
             facingMode: 'user',
             width: { ideal: 1280 },
             height: { ideal: 720 }
-          },
-          audio: {
+          } : false,
+          audio: hasAudio ? {
             echoCancellation: true,
             noiseSuppression: true
-          }
+          } : false
         })
       } catch (err) {
         console.warn('Failed with ideal constraints, trying basic:', err)
         
         // Fallback to basic constraints
         stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
+          video: hasVideo,
+          audio: hasAudio
         })
       }
       
