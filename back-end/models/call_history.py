@@ -1,9 +1,14 @@
 from datetime import datetime
 from bson import ObjectId
-from config.database import db
+from config.database import db_instance
 
 class CallHistory:
-    collection = db.call_history
+    @staticmethod
+    def _get_collection():
+        """Get call_history collection with None check"""
+        if db_instance is not None and db_instance.call_history is not None:
+            return db_instance.call_history
+        raise ConnectionError("Database not connected")
     
     @staticmethod
     def create_call(caller_id, receiver_id, call_type="video"):
@@ -19,7 +24,7 @@ class CallHistory:
             "created_at": datetime.utcnow()
         }
         
-        result = CallHistory.collection.insert_one(call_data)
+        result = CallHistory._get_collection().insert_one(call_data)
         call_data['_id'] = str(result.inserted_id)
         return call_data
     
@@ -30,12 +35,12 @@ class CallHistory:
         
         if ended_at:
             update_data["ended_at"] = ended_at
-            call = CallHistory.collection.find_one({"_id": ObjectId(call_id)})
+            call = CallHistory._get_collection().find_one({"_id": ObjectId(call_id)})
             if call and call.get('started_at'):
                 duration = (ended_at - call['started_at']).total_seconds()
                 update_data["duration"] = int(duration)
         
-        CallHistory.collection.update_one(
+        CallHistory._get_collection().update_one(
             {"_id": ObjectId(call_id)},
             {"$set": update_data}
         )
@@ -43,7 +48,7 @@ class CallHistory:
     @staticmethod
     def get_user_calls(user_id, limit=50):
         """Get call history for a user"""
-        calls = CallHistory.collection.find(
+        calls = CallHistory._get_collection().find(
             {"$or": [{"caller_id": user_id}, {"receiver_id": user_id}]}
         ).sort("created_at", -1).limit(limit)
         
@@ -56,4 +61,4 @@ class CallHistory:
     @staticmethod
     def delete_call(call_id):
         """Delete a call record"""
-        CallHistory.collection.delete_one({"_id": ObjectId(call_id)})
+        CallHistory._get_collection().delete_one({"_id": ObjectId(call_id)})

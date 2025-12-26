@@ -1,10 +1,15 @@
 from datetime import datetime
 from bson import ObjectId
 import bcrypt
-from config.database import db
+from config.database import db_instance
 
 class User:
-    collection = db.users
+    @staticmethod
+    def _get_collection():
+        """Get users collection with None check"""
+        if db_instance is not None and db_instance.users is not None:
+            return db_instance.users
+        raise ConnectionError("Database not connected")
     
     @staticmethod
     def create(email, password, display_name=None):
@@ -28,7 +33,7 @@ class User:
             "refresh_token_expires": None
         }
         
-        result = User.collection.insert_one(user_data)
+        result = User._get_collection().insert_one(user_data)
         user_data['_id'] = str(result.inserted_id)
         user_data.pop('password')  # Don't return password
         return user_data
@@ -36,13 +41,13 @@ class User:
     @staticmethod
     def find_by_email(email):
         """Find user by email"""
-        return User.collection.find_one({"email": email})
+        return User._get_collection().find_one({"email": email})
     
     @staticmethod
     def find_by_id(user_id):
         """Find user by ID"""
         try:
-            user = User.collection.find_one({"_id": ObjectId(user_id)})
+            user = User._get_collection().find_one({"_id": ObjectId(user_id)})
             if user:
                 user['_id'] = str(user['_id'])
                 user.pop('password', None)
@@ -63,7 +68,7 @@ class User:
     @staticmethod
     def update_online_status(user_id, is_online):
         """Update user online status"""
-        User.collection.update_one(
+        User._get_collection().update_one(
             {"_id": ObjectId(user_id)},
             {
                 "$set": {
@@ -76,7 +81,7 @@ class User:
     @staticmethod
     def get_online_users():
         """Get all online users"""
-        users = User.collection.find({"is_online": True}, {"password": 0})
+        users = User._get_collection().find({"is_online": True}, {"password": 0})
         result = []
         for u in users:
             user_dict = {"id": str(u['_id'])}
@@ -103,7 +108,7 @@ class User:
             if attempts >= 5:
                 update_data["account_locked_until"] = datetime.utcnow() + timedelta(minutes=15)
             
-            User.collection.update_one(
+            User._get_collection().update_one(
                 {"_id": user['_id']},
                 {"$set": update_data}
             )
@@ -111,7 +116,7 @@ class User:
     @staticmethod
     def reset_failed_login(email):
         """Reset failed login attempts"""
-        User.collection.update_one(
+        User._get_collection().update_one(
             {"email": email},
             {"$set": {"failed_login_attempts": 0, "account_locked_until": None}}
         )
@@ -131,7 +136,7 @@ class User:
     @staticmethod
     def update_refresh_token(user_id, token, expires):
         """Update refresh token"""
-        User.collection.update_one(
+        User._get_collection().update_one(
             {"_id": ObjectId(user_id)},
             {"$set": {"refresh_token": token, "refresh_token_expires": expires}}
         )
@@ -151,7 +156,7 @@ class User:
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt(rounds=12))
         
         # Update password in database
-        result = User.collection.update_one(
+        result = User._get_collection().update_one(
             {"email": email},
             {
                 "$set": {
