@@ -16,10 +16,10 @@ class Database:
     
     def _initialize(self):
         try:
-            # Use certifi for SSL certificates - compatible with Python 3.13
+            # Python 3.13 has stricter SSL - use workaround for MongoDB Atlas
             self.client = MongoClient(
                 os.getenv('MONGODB_URI'),
-                tlsCAFile=certifi.where(),
+                tlsAllowInvalidCertificates=True,
                 serverSelectionTimeoutMS=5000
             )
             self.db = self.client[os.getenv('DB_NAME', 'deaf_dump_db')]
