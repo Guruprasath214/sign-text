@@ -9,14 +9,7 @@ export default defineConfig({
     open: true
   },
   define: {
-    global: 'globalThis',
-    'process.env': {}
-  },
-  resolve: {
-    alias: {
-      util: 'util/',
-      process: 'process/browser',
-    },
+    global: 'globalThis'
   },
   optimizeDeps: {
     esbuildOptions: {
