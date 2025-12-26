@@ -66,7 +66,10 @@ export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted
         console.error('Speech recognition error:', event.error)
         
         if (event.error === 'not-allowed') {
-          toast.error('🎤 Microphone access denied. Please enable microphone permissions.')
+          toast.error('🎤 Microphone access denied. Please grant microphone permission for speech recognition to work.', {
+            position: 'top-center',
+            autoClose: 5000
+          })
           setIsListening(false)
         } else if (event.error === 'no-speech') {
           // Silently restart - this is normal
@@ -78,8 +81,14 @@ export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted
             }
           }
         } else if (event.error === 'audio-capture') {
-          toast.error('🎤 No microphone found')
+          toast.error('🎤 No microphone found. Please check your device connections.', {
+            position: 'top-center',
+            autoClose: 5000
+          })
           setIsListening(false)
+        } else if (event.error === 'network') {
+          // Network error - silently ignore and retry
+          console.warn('Network error in speech recognition, will auto-retry')
         }
       }
 
@@ -119,7 +128,7 @@ export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted
   }, [])
 
   // Start recognition
-  const startRecognition = () => {
+  const startRecognition = async () => {
     if (!isSupported) {
       toast.error('Speech recognition not supported in this browser')
       return
@@ -128,10 +137,24 @@ export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted
     if (!recognitionRef.current) return
 
     try {
+      // Check microphone permission first
+      const permissionStatus = await navigator.permissions.query({ name: 'microphone' })
+      
+      if (permissionStatus.state === 'denied') {
+        toast.error('🎤 Microphone permission denied. Please enable it in browser settings.', {
+          position: 'top-center',
+          autoClose: 5000
+        })
+        return
+      }
+
       recognitionRef.current.start()
-      toast.info('🎤 Speech recognition started')
+      toast.info('🎤 Speech recognition started', {
+        position: 'bottom-right',
+        autoClose: 2000
+      })
     } catch (error) {
-      if (error.message.includes('already started')) {
+      if (error.message && error.message.includes('already started')) {
         // Already running, that's fine
       } else {
         console.error('Error starting recognition:', error)
