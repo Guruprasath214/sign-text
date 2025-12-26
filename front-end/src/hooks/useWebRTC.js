@@ -19,45 +19,38 @@ export const useWebRTC = (roomId) => {
   // Initialize media stream
   const startLocalStream = async () => {
     try {
-      // First, check if devices are available
+      // Check browser support
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Your browser does not support camera/microphone access. Please use Chrome, Firefox, or Edge.')
       }
 
-      // Enumerate devices to check what's available
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      const hasVideo = devices.some(device => device.kind === 'videoinput')
-      const hasAudio = devices.some(device => device.kind === 'audioinput')
-      
-      console.log('Available devices:', { hasVideo, hasAudio, devices })
-      
-      if (!hasVideo && !hasAudio) {
-        throw new Error('No camera or microphone found. Please connect a webcam and microphone.')
-      }
-      
-      // Try to get both video and audio with flexible constraints
+      // Request permissions with simple constraints - browser will prompt user
       let stream = null
       
       try {
+        // Try basic constraints first - most compatible
         stream = await navigator.mediaDevices.getUserMedia({
-          video: hasVideo ? {
-            facingMode: 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } : false,
-          audio: hasAudio ? {
-            echoCancellation: true,
-            noiseSuppression: true
-          } : false
+          video: true,
+          audio: true
         })
+        console.log('✅ Camera and microphone access granted')
       } catch (err) {
-        console.warn('Failed with ideal constraints, trying basic:', err)
+        console.error('Failed to get media devices:', err)
         
-        // Fallback to basic constraints
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: hasVideo,
-          audio: hasAudio
-        })
+        // Try audio only if video fails
+        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: false,
+              audio: true
+            })
+            console.log('⚠️ Audio only - no camera found')
+          } catch (audioErr) {
+            throw new Error('No camera or microphone found. Please check your device connections.')
+          }
+        } else {
+          throw err
+        }
       }
       
       setLocalStream(stream)
