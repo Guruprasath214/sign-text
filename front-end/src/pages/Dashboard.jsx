@@ -55,7 +55,8 @@ function Dashboard() {
     currentRoomId,
     user?.uid,
     user?.displayName || 'User',
-    isMuted
+    isMuted,
+    localStream  // Pass localStream to ensure mic permission is granted
   )
 
   // Generate random room ID
