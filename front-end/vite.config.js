@@ -10,12 +10,12 @@ export default defineConfig({
   },
   define: {
     global: 'globalThis',
-    'process.env': {},
-    'process.nextTick': '((fn, ...args) => setTimeout(() => fn(...args), 0))',
+    'process.env': {}
   },
   resolve: {
     alias: {
       util: 'util/',
+      process: 'process/browser',
     },
   },
   optimizeDeps: {
