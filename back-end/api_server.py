@@ -33,7 +33,7 @@ app.config['WTF_CSRF_TIME_LIMIT'] = None
 # Get allowed origins from environment
 allowed_origins_str = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000')
 allowed_origins = [origin.strip() for origin in allowed_origins_str.split(',')]
-print(f"🌐 CORS allowed origins: {allowed_origins}")
+print(f"🌐 CORS allowed origins: {allowed_origins}", flush=True)
 
 # CORS with permissive settings for development
 CORS(app, 
@@ -247,8 +247,8 @@ def handle_caption(data):
 
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 5000))
-    print(f"🚀 Server starting on port {port}")
-    print(f"🔒 Security: HTTPS={os.getenv('FORCE_HTTPS', 'False')}, Rate Limiting=Enabled, CSRF=Enabled")
-    print(f"📡 Socket.IO enabled for real-time communication")
-    print(f"🛡️  HTTPOnly Cookies, Security Headers, Input Validation enabled")
+    print(f"🚀 Server starting on port {port}", flush=True)
+    print(f"🔒 Security: HTTPS={os.getenv('FORCE_HTTPS', 'False')}, Rate Limiting=Enabled, CSRF=Enabled", flush=True)
+    print(f"📡 Socket.IO enabled for real-time communication", flush=True)
+    print(f"🛡️  HTTPOnly Cookies, Security Headers, Input Validation enabled", flush=True)
     socketio.run(app, host="0.0.0.0", port=port, debug=False)
