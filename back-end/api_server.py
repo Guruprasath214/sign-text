@@ -240,6 +240,60 @@ def handle_caption(data):
         'timestamp': data.get('timestamp')
     }, room=room, include_self=True)
 
+# ===== SIGN LANGUAGE DETECTION VIA SOCKET.IO =====
+@socketio.on('video_frame')
+def handle_video_frame(data):
+    """Process video frame for sign language detection"""
+    try:
+        room = data.get('room')
+        frame_data = data.get('frame')
+        sender_id = data.get('sender_id')
+        sender_name = data.get('sender_name', 'User')
+        
+        if not frame_data or not room:
+            return
+        
+        # Decode base64 frame (same as /predict route)
+        import base64
+        
+        # Remove data URL prefix if present
+        if 'base64,' in frame_data:
+            frame_data = frame_data.split('base64,')[1]
+        
+        # Decode base64 to image using OpenCV
+        img_bytes = base64.b64decode(frame_data)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if frame is None:
+            print(f'❌ Invalid frame data from {sender_name}')
+            return
+        
+        # Process frame through hand tracker
+        result = tracker.process(frame)
+        prediction = "No Hand"
+        
+        if result.multi_hand_landmarks:
+            for hand_landmarks in result.multi_hand_landmarks:
+                prediction = predict_sign(hand_landmarks)
+                break  # Only process first hand
+        
+        # Only emit if a sign was detected (not "No Hand")
+        if prediction != "No Hand":
+            emit('receive_caption', {
+                'caption': prediction,
+                'type': 'sign',
+                'sender_id': sender_id,
+                'sender_name': sender_name,
+                'timestamp': data.get('timestamp', None)
+            }, room=room, include_self=True)
+            
+            print(f'✋ Detected sign: {prediction} from user {sender_name}')
+        
+    except Exception as e:
+        print(f'❌ Error processing video frame: {e}')
+        # Don't emit error to avoid spamming client
+
 if __name__ == "__main__":
     port = int(os.getenv('PORT', 5000))
     print(f"🚀 Server starting on port {port}", flush=True)

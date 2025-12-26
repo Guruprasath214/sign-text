@@ -289,7 +289,7 @@ function Dashboard() {
                   ) : (
                     captionHistory.slice(-5).map((caption, index) => (
                       <div
-                        key={`caption-${index}-${caption.timestamp || caption.text?.substring(0, 10)}`}
+                        key={`${caption.timestamp || Date.now()}-${index}`}
                         className={`p-2 rounded ${
                           caption.type === 'sign'
                             ? 'bg-blue-900/50 border-l-4 border-blue-400'

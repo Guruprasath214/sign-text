@@ -46,7 +46,7 @@ def detect_sign():
             hand_landmarks = result.multi_hand_landmarks[0]
             
             # Predict sign
-            detected_sign = predict_sign_func(hand_landmarks)
+            detected_sign = predict_sign(hand_landmarks)
             
             return jsonify({
                 'sign': detected_sign,

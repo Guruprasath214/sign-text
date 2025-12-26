@@ -18,3 +18,4 @@ email-validator
 redis
 itsdangerous
 certifi
+whisper
