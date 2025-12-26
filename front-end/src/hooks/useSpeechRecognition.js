@@ -9,10 +9,9 @@ import socketService from '../services/socket'
  * @param {string} userId - Current user ID
  * @param {string} userName - Current user name
  * @param {boolean} isMuted - Whether microphone is muted
- * @param {MediaStream} localStream - Local media stream (ensures mic permission granted)
  * @returns {Object} - Recognition state and controls
  */
-export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted, localStream) => {
+export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted) => {
   const [isListening, setIsListening] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const recognitionRef = useRef(null)
@@ -176,21 +175,12 @@ export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted
     }
   }
 
-  // Auto-start/stop based on call state, mute, and media stream availability
+  // Auto-start/stop based on call state and mute
   useEffect(() => {
     if (!isSupported) return
 
-    // Only start if we have an active call, not muted, have a roomId, AND have a local stream (mic permission granted)
-    if (isActive && !isMuted && roomId && localStream) {
-      // Small delay to ensure getUserMedia has fully completed
-      const timer = setTimeout(() => {
-        startRecognition()
-      }, 500)
-      
-      return () => {
-        clearTimeout(timer)
-        stopRecognition()
-      }
+    if (isActive && !isMuted && roomId) {
+      startRecognition()
     } else {
       stopRecognition()
     }
@@ -198,7 +188,7 @@ export const useSpeechRecognition = (isActive, roomId, userId, userName, isMuted
     return () => {
       stopRecognition()
     }
-  }, [isActive, isMuted, roomId, isSupported, localStream])
+  }, [isActive, isMuted, roomId, isSupported])
 
   return {
     isListening,
