@@ -148,8 +148,8 @@ def refresh():
             'access_token',
             value=new_access_token,
             httponly=True,
-            secure=False,  # Set to True in production with HTTPS
-            samesite='Lax',
+            secure=True,  # Required for SameSite=None
+            samesite='None',  # Allow cross-origin cookies
             max_age=3600
         )
         

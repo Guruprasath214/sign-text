@@ -57,8 +57,8 @@ def set_auth_cookies(response, access_token, refresh_token):
         'access_token',
         value=access_token,
         httponly=True,
-        secure=os.getenv('FORCE_HTTPS', 'False') == 'True',  # Only send over HTTPS in production
-        samesite='Lax',
+        secure=True,  # Required for SameSite=None
+        samesite='None',  # Allow cross-origin cookies (Vercel → Render)
         max_age=3600  # 1 hour
     )
     
@@ -67,8 +67,8 @@ def set_auth_cookies(response, access_token, refresh_token):
         'refresh_token',
         value=refresh_token,
         httponly=True,
-        secure=os.getenv('FORCE_HTTPS', 'False') == 'True',
-        samesite='Lax',
+        secure=True,  # Required for SameSite=None
+        samesite='None',  # Allow cross-origin cookies (Vercel → Render)
         max_age=2592000  # 30 days
     )
     
