@@ -62,18 +62,5 @@ class Database:
 # Singleton instance
 db_instance = Database()
 
-# Provide property-based access to collections
-@property
-def users():
-    return db_instance.users if db_instance else None
-
-@property  
-def call_history():
-    return db_instance.call_history if db_instance else None
-
-@property
-def online_users():
-    return db_instance.online_users if db_instance else None
-
 # Keep backward compatibility
 db = db_instance.get_db()
