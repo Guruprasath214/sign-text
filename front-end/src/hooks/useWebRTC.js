@@ -19,10 +19,30 @@ export const useWebRTC = (roomId) => {
   // Initialize media stream
   const startLocalStream = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      })
+      // Try to get both video and audio with flexible constraints
+      let stream = null
+      
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true
+          }
+        })
+      } catch (err) {
+        console.warn('Failed with ideal constraints, trying basic:', err)
+        
+        // Fallback to basic constraints
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true
+        })
+      }
       
       setLocalStream(stream)
       if (localVideoRef.current) {
@@ -36,18 +56,23 @@ export const useWebRTC = (roomId) => {
       // Import toast dynamically
       const { toast } = await import('react-toastify')
       
-      if (error.name === 'NotFoundError') {
-        toast.error('❌ Camera or microphone not found. Please connect a webcam and microphone.', {
+      if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        toast.error('❌ Camera or microphone not found. Please check your device connections and try again.', {
           position: "top-center",
           autoClose: 5000,
         })
-      } else if (error.name === 'NotAllowedError') {
-        toast.error('❌ Camera/microphone access denied. Please allow permissions in your browser.', {
+      } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        toast.error('❌ Camera/microphone access denied. Please allow permissions in your browser settings.', {
+          position: "top-center",
+          autoClose: 5000,
+        })
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        toast.error('❌ Camera/microphone is already in use by another application. Please close other apps and try again.', {
           position: "top-center",
           autoClose: 5000,
         })
       } else {
-        toast.error('❌ Failed to access camera/microphone. Please check your devices.', {
+        toast.error(`❌ Failed to access camera/microphone: ${error.message}`, {
           position: "top-center",
           autoClose: 5000,
         })
