@@ -49,15 +49,10 @@ CORS(app,
 # Force HTTPS in production
 if os.getenv('FORCE_HTTPS', 'False') == 'True':
     Talisman(app, 
-             force_https=True,
-             strict_transport_security=True,
-             content_security_policy={
-                 'default-src': "'self'",
-                 'script-src': "'self' 'unsafe-inline'",
-                 'style-src': "'self' 'unsafe-inline'",
-                 'img-src': "'self' data: https:",
-                 'connect-src': "'self' wss: ws:"
-             })
+             force_https=False,  # Disable force HTTPS redirect to allow CORS
+             strict_transport_security=False,
+             content_security_policy=None,  # Disable CSP to allow CORS
+             force_https_permanent=False)
 
 # Rate Limiting (Redis recommended for production, memory for development)
 redis_url = os.getenv('REDIS_URL', None)
