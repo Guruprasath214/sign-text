@@ -31,7 +31,9 @@ app.config['WTF_CSRF_TIME_LIMIT'] = None
 # csrf = CSRFProtect(app)
 
 # Get allowed origins from environment
-allowed_origins = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
+allowed_origins_str = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000')
+allowed_origins = [origin.strip() for origin in allowed_origins_str.split(',')]
+print(f"🌐 CORS allowed origins: {allowed_origins}")
 
 # CORS with permissive settings for development
 CORS(app, 
