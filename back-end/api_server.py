@@ -143,10 +143,13 @@ def handle_disconnect():
     # Remove from connected users and update status
     user_id = connected_users.pop(request.sid, None)
     if user_id:
-        User.update_online_status(user_id, False)
-        # Broadcast updated online users
-        online_users = User.get_online_users()
-        emit('online_users_updated', {'users': online_users}, broadcast=True)
+        try:
+            User.update_online_status(user_id, False)
+            # Broadcast updated online users
+            online_users = User.get_online_users()
+            emit('online_users_updated', {'users': online_users}, broadcast=True)
+        except Exception as e:
+            print(f'⚠️  Error updating user status on disconnect: {e}')
 
 @socketio.on('user_online')
 def handle_user_online(data):
