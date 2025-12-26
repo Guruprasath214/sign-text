@@ -9,7 +9,14 @@ export default defineConfig({
     open: true
   },
   define: {
-    global: 'globalThis'
+    global: 'globalThis',
+    'process.env': {},
+    'process.nextTick': '((fn, ...args) => setTimeout(() => fn(...args), 0))',
+  },
+  resolve: {
+    alias: {
+      util: 'util/',
+    },
   },
   optimizeDeps: {
     esbuildOptions: {

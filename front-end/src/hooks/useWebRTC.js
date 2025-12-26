@@ -74,6 +74,7 @@ export const useWebRTC = (roomId) => {
       setIsCallActive(true)
     } catch (error) {
       console.error('Error starting call:', error)
+      throw error // Re-throw to let Dashboard handle it
     }
   }
 
@@ -91,6 +92,7 @@ export const useWebRTC = (roomId) => {
       setIsCallActive(true)
     } catch (error) {
       console.error('Error joining call:', error)
+      throw error // Re-throw to let Dashboard handle it
     }
   }
 
