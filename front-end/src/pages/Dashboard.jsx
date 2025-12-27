@@ -289,7 +289,7 @@ function Dashboard() {
                   ) : (
                     captionHistory.slice(-5).map((caption, index) => (
                       <div
-                        key={`${caption.timestamp || Date.now()}-${index}`}
+                        key={`caption-${index}-${caption.timestamp || ''}-${caption.sender}-${caption.type}`}
                         className={`p-2 rounded ${
                           caption.type === 'sign'
                             ? 'bg-blue-900/50 border-l-4 border-blue-400'
@@ -444,9 +444,9 @@ function Dashboard() {
                     <p className="text-gray-500 text-center py-4">No other users online</p>
                   ) : (
                     <ul className="space-y-2">
-                      {onlineUsers.map((onlineUser) => (
+                      {onlineUsers.map((onlineUser, index) => (
                         <li 
-                          key={onlineUser._id} 
+                          key={`online-user-${onlineUser._id || index}-${onlineUser.email || index}`} 
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-center">
@@ -497,9 +497,9 @@ function Dashboard() {
                     <p className="text-gray-500 text-center py-4">No call history yet</p>
                   ) : (
                     <ul className="space-y-2">
-                      {callHistory.map((call) => (
+                      {callHistory.map((call, index) => (
                         <li 
-                          key={call._id} 
+                          key={`call-history-${call._id || index}-${call.start_time || index}`} 
                           className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-start justify-between">
