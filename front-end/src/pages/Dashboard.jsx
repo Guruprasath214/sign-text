@@ -289,7 +289,7 @@ function Dashboard() {
                   ) : (
                     captionHistory.slice(-5).map((caption, index) => (
                       <div
-                        key={`caption-${index}-${caption.timestamp || ''}-${caption.sender}-${caption.type}`}
+                        key={`caption-${caption.timestamp || Date.now()}-${caption.sender}-${index}`}
                         className={`p-2 rounded ${
                           caption.type === 'sign'
                             ? 'bg-blue-900/50 border-l-4 border-blue-400'
@@ -444,9 +444,9 @@ function Dashboard() {
                     <p className="text-gray-500 text-center py-4">No other users online</p>
                   ) : (
                     <ul className="space-y-2">
-                      {onlineUsers.map((onlineUser, index) => (
-                        <li 
-                          key={`online-user-${onlineUser._id || index}-${onlineUser.email || index}`} 
+                      {onlineUsers.map((onlineUser) => (
+                        <li
+                          key={onlineUser._id}
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-center">
@@ -497,9 +497,9 @@ function Dashboard() {
                     <p className="text-gray-500 text-center py-4">No call history yet</p>
                   ) : (
                     <ul className="space-y-2">
-                      {callHistory.map((call, index) => (
+                      {callHistory.map((call) => (
                         <li 
-                          key={`call-history-${call._id || index}-${call.start_time || index}`} 
+                          key={call._id} 
                           className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-start justify-between">
