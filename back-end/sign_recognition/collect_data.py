@@ -3,7 +3,7 @@ import mediapipe as mp
 import numpy as np
 import os
 
-SIGN_NAME = "THANK_YOU"   # Change this for each sign
+SIGN_NAME = "Clock"   # Change this for each sign
 SAMPLES = 200
 
 mp_hands = mp.solutions.hands
