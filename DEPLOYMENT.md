@@ -84,6 +84,16 @@ After deployment completes:
   - Missing dependencies: Check `requirements.txt`
   - Port conflict: Render auto-assigns port
 
+### Sign Predictor Fails (model not found)
+- Error example: `FileNotFoundError: Model file not found at .../sign_recognition/model.pkl`
+- Fix:
+   - Train a model locally using one of:
+      - `back-end/sign_recognition/train_collected_npy.py`
+      - `back-end/sign_recognition/train_from_dataset.py`
+      - `back-end/sign_recognition/train_conversation_signs.py`
+   - Ensure the generated `model.pkl` is placed in `back-end/sign_recognition/` before running the backend.
+   - Restart the backend to reload the model.
+
 ### Frontend Shows 404
 - **Solution**: Wait for build to complete (check Logs)
 - **Check**: Build command ran successfully
