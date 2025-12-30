@@ -11,13 +11,17 @@ sign_bp = Blueprint('sign', __name__)
 # Initialize hand tracker
 tracker = HandTracker()
 
-@sign_bp.route('/detect', methods=['POST'])
+@sign_bp.route('/detect', methods=['POST', 'OPTIONS'])
 def detect_sign():
     """
     Detect sign language from video frame
     Expects: { "frame": "base64_encoded_image", "room_id": "room123", "user_id": "user123" }
     Returns: { "sign": "HELLO", "confidence": 0.95 }
     """
+    # Handle preflight OPTIONS request
+    if request.method == 'OPTIONS':
+        return '', 204
+    
     try:
         data = request.get_json()
         
@@ -48,6 +52,8 @@ def detect_sign():
             # Predict sign
             detected_sign = predict_sign(hand_landmarks)
             
+            print(f'✋ Sign detected: {detected_sign}', flush=True)
+            
             return jsonify({
                 'sign': detected_sign,
                 'detected': True,
@@ -61,5 +67,7 @@ def detect_sign():
             })
     
     except Exception as e:
-        print(f"Error in sign detection: {str(e)}")
+        print(f"❌ Error in sign detection: {str(e)}", flush=True)
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500

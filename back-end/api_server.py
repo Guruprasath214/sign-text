@@ -61,16 +61,17 @@ limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     storage_uri=redis_url or "memory://",
-    default_limits=["1000 per day", "200 per hour"],
+    default_limits=["10000 per day", "5000 per hour"],
     storage_options={}
 )
 
 # Initialize SocketIO with CORS
 socketio = SocketIO(app, 
                     cors_allowed_origins=allowed_origins,
-                    async_mode='eventlet',
+                    async_mode='threading',
                     cookie=True,
-                    engineio_logger=False)
+                    engineio_logger=False,
+                    logger=False)
 
 # Initialize hand tracker
 tracker = HandTracker()
@@ -87,6 +88,17 @@ connected_users = {}
 @app.after_request
 def set_security_headers(response):
     """Add security headers to all responses"""
+    # Get the origin from the request
+    origin = request.headers.get('Origin')
+    
+    # If origin is in allowed origins, set CORS headers
+    if origin in allowed_origins:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Expose-Headers'] = 'Content-Type, Authorization'
+    
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
@@ -99,7 +111,7 @@ def set_security_headers(response):
 
 # ===== ORIGINAL SIGN LANGUAGE ROUTE =====
 @app.route("/predict", methods=["POST"])
-@limiter.limit("30 per minute")  # Rate limit to prevent abuse
+@limiter.limit("1000 per minute")  # High limit for development
 def predict():
     if "frame" not in request.files:
         return jsonify({"error": "No frame"}), 400
@@ -116,6 +128,12 @@ def predict():
             prediction = predict_sign(hand_landmarks)
 
     return jsonify({"prediction": prediction})
+
+# ===== CORS PREFLIGHT HANDLER =====
+@app.route('/api/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    """Handle OPTIONS preflight requests for all API routes"""
+    return '', 204
 
 # ===== HEALTH CHECK =====
 @app.route('/api/health', methods=['GET'])
@@ -300,4 +318,4 @@ if __name__ == "__main__":
     print(f"🔒 Security: HTTPS={os.getenv('FORCE_HTTPS', 'False')}, Rate Limiting=Enabled, CSRF=Enabled", flush=True)
     print(f"📡 Socket.IO enabled for real-time communication", flush=True)
     print(f"🛡️  HTTPOnly Cookies, Security Headers, Input Validation enabled", flush=True)
-    socketio.run(app, host="0.0.0.0", port=port, debug=False)
+    socketio.run(app, host="0.0.0.0", port=port, debug=True, use_reloader=False)
